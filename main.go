@@ -122,7 +122,7 @@ func setupUI() {
 			}
 
 			for i := 0; i < len(rows); i++ {
-				// Make sure P/N & Price exists
+				// Make sure pn & price exists
 				if len(rows[i]) < 8 {
 					continue
 				}
@@ -139,7 +139,7 @@ func setupUI() {
 					priceMap[pn] = price
 				}
 
-				// Make lead time exists
+				// Make sure lead time exists
 				if len(rows[i]) < 12 {
 					continue
 				}
