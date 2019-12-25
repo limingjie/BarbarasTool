@@ -104,7 +104,7 @@ func setupUI() {
 		// Make sure input file has at least 1 data sheet
 		sheets := inputFile.GetSheetMap()
 		if len(sheets) == 0 {
-			ui.MsgBox(mainwin, "Error", "The price excel has no sheet!\n"+err.Error())
+			ui.MsgBox(mainwin, "Error", "The vendor excel has no sheet!")
 			return
 		}
 
@@ -160,10 +160,10 @@ func setupUI() {
 			return
 		}
 
-		// Make sure input file has at least 1 data sheet
+		// Make sure output file has at least 1 data sheet
 		sheets = outputFile.GetSheetMap()
 		if len(sheets) == 0 {
-			ui.MsgBox(mainwin, "Error", "The output excel has no sheet!\n"+err.Error())
+			ui.MsgBox(mainwin, "Error", "The bid excel has no sheet!")
 			return
 		}
 
@@ -216,7 +216,7 @@ func setupUI() {
 
 		// Nothing updated
 		if updateCounter == 0 {
-			ui.MsgBox(mainwin, "Error", "Nothing updated.")
+			ui.MsgBox(mainwin, "Message", "Nothing updated.")
 			return
 		}
 
