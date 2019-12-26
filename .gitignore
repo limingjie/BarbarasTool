@@ -4,6 +4,8 @@
 *.dll
 *.so
 *.dylib
+*.app
+*.zip
 BarbarasTool
 
 # Test binary, built with `go test -c`
