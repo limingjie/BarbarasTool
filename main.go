@@ -127,18 +127,18 @@ func setupUI() {
 
 			for i := 0; i < len(rows); i++ {
 				// Make sure PN & price exists
-				if len(rows[i]) < 8 {
+				if len(rows[i]) < 'H'-'A'+1 {
 					continue
 				}
 
 				// Check PN
-				pn := strings.ToLower(strings.TrimSpace(rows[i][2]))
+				pn := strings.ToLower(strings.TrimSpace(rows[i]['C'-'A']))
 				if len(pn) == 0 {
 					continue
 				}
 
 				// Check and set price
-				price := strings.TrimSpace(rows[i][7])
+				price := strings.TrimSpace(rows[i]['H'-'A'])
 				if _, err := strconv.ParseFloat(price, 64); err == nil {
 					priceMap[pn] = price
 				}
@@ -149,7 +149,7 @@ func setupUI() {
 				}
 
 				// Check and set lead time
-				leadTime := strings.TrimSpace(rows[i][11])
+				leadTime := strings.TrimSpace(rows[i]['L'-'A'])
 				if len(leadTime) != 0 {
 					leadTime = strings.ReplaceAll(leadTime, "周", " wks")
 					leadTime = strings.ReplaceAll(leadTime, "现货", "In stock")
@@ -192,12 +192,12 @@ func setupUI() {
 			for i := 0; i < len(rows); i++ {
 				// Make sure F exists
 				length := len(rows[i])
-				if length < 6 {
+				if length < 'F'-'A'+1 {
 					continue
 				}
 
 				// Check PN
-				pn := strings.ToLower(strings.TrimSpace(rows[i][5]))
+				pn := strings.ToLower(strings.TrimSpace(rows[i]['F'-'A']))
 				if len(pn) == 0 {
 					continue
 				}
@@ -205,8 +205,8 @@ func setupUI() {
 				// Update price
 				if price, ok := priceMap[pn]; ok {
 					pnFoundMap[pn] = true
-					if length < 11 || price != rows[i][10] {
-						if cellName, err := excelize.CoordinatesToCellName(11, i+1); err == nil {
+					if length < 11 || price != rows[i]['K'-'A'] {
+						if cellName, err := excelize.CoordinatesToCellName('K'-'A'+1, i+1); err == nil {
 							bidFile.SetCellDefault(sheetName, cellName, price)
 							priceUpdateCounter++
 						}
@@ -216,8 +216,8 @@ func setupUI() {
 				// Update lead time
 				if leadTime, ok := leadTimeMap[pn]; ok {
 					pnFoundMap[pn] = true
-					if length < 16 || leadTime != rows[i][15] {
-						if cellName, err := excelize.CoordinatesToCellName(16, i+1); err == nil {
+					if length < 16 || leadTime != rows[i]['P'-'A'] {
+						if cellName, err := excelize.CoordinatesToCellName('P'-'A'+1, i+1); err == nil {
 							bidFile.SetCellStr(sheetName, cellName, leadTime)
 							leadTimeUpdatecounter++
 						}
