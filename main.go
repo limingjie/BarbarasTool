@@ -15,8 +15,35 @@ import (
 
 var mainwin *ui.Window
 
+// Open a xlsx file
+func openExcelFile(must bool) (filename string) {
+	for true {
+		filename = ui.OpenFile(mainwin)
+
+		// The open file dialog is cancelled
+		if len(filename) == 0 {
+			if must {
+				ui.MsgBoxError(mainwin, "Error", "A file must be selected. Please try again.")
+				continue
+			} else {
+				break
+			}
+		}
+
+		// Not an xlsx file
+		if !strings.HasSuffix(filename, ".xlsx") {
+			ui.MsgBoxError(mainwin, "Error", "Only support xlsx format. Please try again.")
+			continue
+		}
+
+		break
+	}
+
+	return
+}
+
 func setupUI() {
-	mainwin = ui.NewWindow("Barbara's Tool", 700, 100, true)
+	mainwin = ui.NewWindow("Barbara's Tool", 700, 100, false)
 
 	mainwin.OnClosing(func(*ui.Window) bool {
 		ui.Quit()
@@ -29,147 +56,183 @@ func setupUI() {
 	})
 
 	// Controls
-	vendorEntry := ui.NewEntry()
-	vendorEntry.SetReadOnly(true)
-	bidEntry := ui.NewEntry()
-	bidEntry.SetReadOnly(true)
-	buttonOpenFile := ui.NewButton("Open Files")
+	entryBidFile := ui.NewEntry()
+	entryBidFile.SetReadOnly(true)
+	buttonAdd := ui.NewButton("Add Vendor File")
+	buttonReset := ui.NewButton(" R ")
 	buttonProcess := ui.NewButton("Process")
 
-	// Filename form
-	form := ui.NewForm()
-	form.SetPadded(true)
-	form.Append("", ui.NewLabel("Search Price (H) & Lead time (L) base on P/N (C)"), false)
-	form.Append("Vendor", vendorEntry, false)
-	form.Append("", ui.NewLabel("Fill in Price (K) & Lead time (P) base on P/N (F)"), false)
-	form.Append("Bid", bidEntry, false)
+	// Add vendor file button
+	boxAdd := ui.NewHorizontalBox()
+	boxAdd.SetPadded(true)
+	boxAdd.Append(ui.NewLabel(""), true)
+	boxAdd.Append(buttonAdd, false)
 
-	// Buttons
-	buttonBox := ui.NewHorizontalBox()
-	buttonBox.SetPadded(true)
-	buttonBox.Append(ui.NewLabel(""), true)
-	buttonBox.Append(ui.NewLabel("Cheers Barbara!"), false)
-	buttonBox.Append(buttonOpenFile, false)
-	buttonBox.Append(buttonProcess, false)
+	// Vendor files
+	boxVendorFiles := ui.NewVerticalBox()
+	boxVendorFiles.SetPadded(true)
+
+	// Bid file box
+	boxBidFile := ui.NewHorizontalBox()
+	boxBidFile.SetPadded(true)
+	boxBidFile.Append(entryBidFile, true)
+	boxBidFile.Append(buttonReset, false)
+
+	// Process button layout
+	boxProcess := ui.NewHorizontalBox()
+	boxProcess.SetPadded(true)
+	boxProcess.Append(ui.NewLabel("Cheers Barbara!"), false)
+	boxProcess.Append(ui.NewLabel(""), true)
+	boxProcess.Append(buttonProcess, false)
 
 	// Main layout
 	box := ui.NewVerticalBox()
 	box.SetPadded(true)
-	box.Append(form, false)
-	box.Append(buttonBox, false)
+	box.Append(ui.NewLabel("Vendor file - Search Price (H) & Lead time (L) base on P/N (C)"), false)
+	box.Append(boxVendorFiles, false)
+	box.Append(ui.NewVerticalBox(), true)
+	box.Append(boxAdd, false)
+	box.Append(ui.NewHorizontalSeparator(), false)
+	box.Append(ui.NewLabel("Bid file - Fill in Price (K) & Lead time (P) base on P/N (F)"), false)
+	box.Append(boxBidFile, false)
+	box.Append(ui.NewHorizontalSeparator(), false)
+	box.Append(boxProcess, false)
+
+	// Keep track of vendor files entries for removal
+	vendorEntries := make([]*ui.Entry, 0)
+
+	// Add a new vendor file
+	addVendorFile := func() (added bool) {
+		// Open file, the first file is required.
+		filename := openExcelFile(len(vendorEntries) == 0)
+
+		if len(filename) != 0 {
+			// Add a new entry to UI
+			entry := ui.NewEntry()
+			entry.SetReadOnly(true)
+			entry.SetText(filename)
+			button := ui.NewButton(" - ")
+			entryBox := ui.NewHorizontalBox()
+			entryBox.SetPadded(true)
+			entryBox.Append(entry, true)
+			entryBox.Append(button, false)
+			boxVendorFiles.Append(entryBox, false)
+
+			// Append the entry
+			vendorEntries = append(vendorEntries, entry)
+
+			button.OnClicked(func(*ui.Button) {
+				for i, e := range vendorEntries {
+					if e == entry {
+						// Destroy the file entry UI
+						boxVendorFiles.Delete(i)
+						entryBox.Destroy() // It cascades to all children
+
+						// Remove the entry from the tracking slice
+						vendorEntries = append(vendorEntries[:i], vendorEntries[i+1:]...)
+						break
+					}
+				}
+			})
+
+			return true
+		}
+
+		return false
+	}
 
 	// Main window
 	mainwin.SetChild(box)
 	mainwin.SetMargined(true)
 	mainwin.Show()
 
-	// Open file button click event
-	buttonOpenFile.OnClicked(func(*ui.Button) {
-		vendorEntry.SetText(ui.OpenFile(mainwin))
-		bidEntry.SetText(ui.OpenFile(mainwin))
+	// Open files
+	ui.MsgBox(mainwin, "Message", "Open the vendor files.")
+	for addVendorFile() { // Until cancelled
+	}
+	ui.MsgBox(mainwin, "Message", "Open the bid file.")
+	entryBidFile.SetText(openExcelFile(true))
+
+	// Add vendor file button click event
+	buttonAdd.OnClicked(func(*ui.Button) {
+		addVendorFile()
+	})
+
+	// Reset bid file
+	buttonReset.OnClicked(func(*ui.Button) {
+		filename := openExcelFile(false)
+		if len(filename) != 0 {
+			entryBidFile.SetText(filename)
+		}
 	})
 
 	// Process button click event
 	buttonProcess.OnClicked(func(*ui.Button) {
-		// Check vendor filename
-		vendorFilename := strings.TrimSpace(vendorEntry.Text())
-		if len(vendorFilename) == 0 {
-			ui.MsgBox(mainwin, "Error", "Vendor filename cannot be empty.")
-			return
-		}
-		if !strings.HasSuffix(vendorFilename, ".xlsx") {
-			ui.MsgBox(mainwin, "Error", "Only support xlsx format :)")
-			return
-		}
-
-		// Check bid filename
-		bidFilename := strings.TrimSpace(bidEntry.Text())
-		if len(bidFilename) == 0 {
-			ui.MsgBox(mainwin, "Error", "Bid filename cannot be empty.")
-			return
-		}
-		if !strings.HasSuffix(bidFilename, ".xlsx") {
-			ui.MsgBox(mainwin, "Error", "Only support xlsx format :)")
-			return
-		}
-
-		// Open vendor file
-		vendorFile, err := excelize.OpenFile(vendorFilename)
-		if err != nil {
-			ui.MsgBox(mainwin, "Error", err.Error())
-			return
-		}
-
-		// Open bid file
-		bidFile, err := excelize.OpenFile(bidFilename)
-		if err != nil {
-			ui.MsgBox(mainwin, "Error", err.Error())
-			return
-		}
-
-		// Make sure vendor file has at least 1 data sheet
-		sheets := vendorFile.GetSheetMap()
-		if len(sheets) == 0 {
-			ui.MsgBox(mainwin, "Error", "The vendor file is empty!")
-			return
-		}
-
 		// Create data maps by reading all vendor file sheet(s)
 		// - PN        - Col C - "型号（P/N)"
 		// - Price     - Col H - "合计（不含税）"
 		// - Lead time - Col L - "货期"
 		priceMap := make(map[string]string)
 		leadTimeMap := make(map[string]string)
-		for _, sheetName := range sheets {
-			rows, err := vendorFile.GetRows(sheetName)
+		for _, entry := range vendorEntries {
+			// Open vendor file
+			vendorFile, err := excelize.OpenFile(entry.Text())
 			if err != nil {
-				ui.MsgBox(mainwin, "Error", err.Error())
-				continue
+				ui.MsgBoxError(mainwin, "Error", err.Error())
+				return
 			}
 
-			for i := 0; i < len(rows); i++ {
-				// Make sure PN & price exists
-				if len(rows[i]) < 'H'-'A'+1 {
+			for _, sheetName := range vendorFile.GetSheetMap() {
+				rows, err := vendorFile.GetRows(sheetName)
+				if err != nil {
+					ui.MsgBoxError(mainwin, "Error", err.Error())
 					continue
 				}
 
-				// Check PN
-				pn := strings.ToLower(strings.TrimSpace(rows[i]['C'-'A']))
-				if len(pn) == 0 {
-					continue
-				}
+				for i := 0; i < len(rows); i++ {
+					// Make sure PN & price exists
+					if len(rows[i]) < 'H'-'A'+1 {
+						continue
+					}
 
-				// Check and set price
-				price := strings.TrimSpace(rows[i]['H'-'A'])
-				if _, err := strconv.ParseFloat(price, 64); err == nil {
-					priceMap[pn] = price
-				}
+					// Check PN
+					pn := strings.ToLower(strings.TrimSpace(rows[i]['C'-'A']))
+					if len(pn) == 0 {
+						continue
+					}
 
-				// Make sure lead time exists
-				if len(rows[i]) < 12 {
-					continue
-				}
+					// Check and set price
+					price := strings.TrimSpace(rows[i]['H'-'A'])
+					if _, err := strconv.ParseFloat(price, 64); err == nil {
+						priceMap[pn] = price
+					}
 
-				// Check and set lead time
-				leadTime := strings.TrimSpace(rows[i]['L'-'A'])
-				if len(leadTime) != 0 {
-					leadTime = strings.ReplaceAll(leadTime, "周", " wks")
-					leadTime = strings.ReplaceAll(leadTime, "现货", "In stock")
-					leadTimeMap[pn] = leadTime
+					// Make sure lead time exists
+					if len(rows[i]) < 12 {
+						continue
+					}
+
+					// Check and set lead time
+					leadTime := strings.TrimSpace(rows[i]['L'-'A'])
+					if len(leadTime) != 0 {
+						leadTime = strings.ReplaceAll(leadTime, "周", " wks")
+						leadTime = strings.ReplaceAll(leadTime, "现货", "In stock")
+						leadTimeMap[pn] = leadTime
+					}
 				}
 			}
 		}
 
 		// Stop if both price map and lead time map are empty
 		if len(priceMap) == 0 && len(leadTimeMap) == 0 {
-			ui.MsgBox(mainwin, "Error", "No price or lead time data found from vendor file!")
+			ui.MsgBoxError(mainwin, "Error", "No price or lead time data found from vendor file(s)!")
 			return
 		}
 
-		// Make sure bid file has at least 1 data sheet
-		sheets = bidFile.GetSheetMap()
-		if len(sheets) == 0 {
-			ui.MsgBox(mainwin, "Error", "The bid excel is empty!")
+		// Open bid file
+		bidFile, err := excelize.OpenFile(entryBidFile.Text())
+		if err != nil {
+			ui.MsgBoxError(mainwin, "Error", err.Error())
 			return
 		}
 
@@ -180,10 +243,10 @@ func setupUI() {
 		pnFoundMap := make(map[string]bool)
 		priceUpdateCounter := 0
 		leadTimeUpdatecounter := 0
-		for _, sheetName := range sheets {
+		for _, sheetName := range bidFile.GetSheetMap() {
 			rows, err := bidFile.GetRows(sheetName)
 			if err != nil {
-				ui.MsgBox(mainwin, "Error", err.Error())
+				ui.MsgBoxError(mainwin, "Error", err.Error())
 				continue
 			}
 
@@ -231,17 +294,17 @@ func setupUI() {
 		// Save bid file if updated
 		if priceUpdateCounter != 0 || leadTimeUpdatecounter != 0 {
 			if err := bidFile.Save(); err != nil {
-				ui.MsgBox(mainwin, "Error", "Error save bid file.\n"+err.Error())
+				ui.MsgBoxError(mainwin, "Error", "Error save bid file.\n"+err.Error())
 				return
 			}
 		}
 
 		// Done
 		ui.MsgBox(mainwin, "Done!",
-			fmt.Sprintf("%d matching PN(s) found from vendor file.\n"+
+			fmt.Sprintf("%d matching PN(s) found from %d vendor file(s).\n"+
 				"%d price cell(s) updated.\n"+
 				"%d lead time cell(s) updated.",
-				len(pnFoundMap), priceUpdateCounter, leadTimeUpdatecounter))
+				len(pnFoundMap), len(vendorEntries), priceUpdateCounter, leadTimeUpdatecounter))
 	})
 }
 
