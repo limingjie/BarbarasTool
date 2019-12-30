@@ -6,12 +6,35 @@ This is just a naive implementation base on requirements. No magic here!
 
 I wish you happy every day, Barbara!
 
-## Cross Compile to Windows on Mac
+## Build
+
+### Mac
 
 ```shell
-# Install MinGW which is required by CGO
+# Build executable
+# -s - Omit the symbol table and debug information.
+# -w - Omit the DWARF symbol table.
+go build -ldflags="-s -w"
+
+# Compress executable
+upx --ultra-brute BarbarasTool
+
+# Remove terminal prompt
+mv BarbarasTool BarbarasTool.app
+```
+
+### Cross Compile to Windows on Mac
+
+```shell
+# Install cross compiler MinGW
 brew install mingw-w64
 
-# Cross compile
-CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 go build -ldflags="-H windowsgui"
+# Build executable
+# -s            - Omit the symbol table and debug information.
+# -w            - Omit the DWARF symbol table.
+# -H windowsgui - On Windows, -H windowsgui writes a "GUI binary" instead of a "console binary."
+CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H windowsgui"
+
+# Compress executable
+upx --ultra-brute BarbarasTool.exe
 ```

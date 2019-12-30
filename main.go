@@ -1,3 +1,5 @@
+// #cgo CFLAGS: -O3
+// #cgo CXXFLAGS: -O3
 package main
 
 import (
@@ -160,7 +162,7 @@ func setupUI() {
 
 		// Stop if both price map and lead time map are empty
 		if len(priceMap) == 0 && len(leadTimeMap) == 0 {
-			ui.MsgBox(mainwin, "Error", "No price or lead time data found!")
+			ui.MsgBox(mainwin, "Error", "No price or lead time data found from vendor file!")
 			return
 		}
 
