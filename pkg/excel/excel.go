@@ -9,19 +9,20 @@ import (
 )
 
 // IndexColumns - Index key and value columns of given file.
-func IndexColumns(data *map[string]string, filename string, keyCol, valueCol int) (*map[string]string, error) {
+func IndexColumns(index *map[string]string, filename string, keyCol, valueCol int) (*map[string]string, error) {
 	file, err := excelize.OpenFile(filename)
 	if err != nil {
-		return data, err
+		return index, err
 	}
 
 	for _, sheetName := range file.GetSheetMap() {
 		rows, err := file.GetRows(sheetName)
 		if err != nil {
+			// Omit the sheet
 			continue
 		}
 		for i := 0; i < len(rows); i++ {
-			// Make sure key & value columns are exist
+			// Make sure key & value columns both exist
 			if len(rows[i]) < keyCol+1 || len(rows[i]) < valueCol+1 {
 				continue
 			}
@@ -29,37 +30,36 @@ func IndexColumns(data *map[string]string, filename string, keyCol, valueCol int
 			key := strings.ToLower(strings.TrimSpace(rows[i][keyCol]))
 			value := strings.TrimSpace(rows[i][valueCol])
 
+			// key or value should not be empty
 			if len(key) != 0 && len(value) != 0 {
-				(*data)[key] = value
+				(*index)[key] = value
 			}
 		}
 	}
 
-	return data, nil
+	return index, nil
 }
 
 // UpdateColumnByIndex - Update the file using index data
 func UpdateColumnByIndex(data *map[string]string,
 	filename string, keyCol, valueCol int, formattedValue bool,
 ) (found, updated int, err error) {
-	// Open file
 	file, err := excelize.OpenFile(filename)
 	if err != nil {
 		return
 	}
 
-	// Update file
 	foundMap := make(map[string]bool)
 	for _, sheetName := range file.GetSheetMap() {
 		rows, err := file.GetRows(sheetName)
 		if err != nil {
-			// Omit and continue with next sheet
+			// Omit the sheet
 			continue
 		}
 
 		for i := 0; i < len(rows); i++ {
 			// Make sure key column exists
-			length := len(rows[i])
+			size := len(rows[i])
 			if len(rows[i]) < keyCol+1 {
 				continue
 			}
@@ -73,7 +73,7 @@ func UpdateColumnByIndex(data *map[string]string,
 			// Update value
 			if value, ok := (*data)[key]; ok {
 				foundMap[key] = true
-				if length < valueCol || value != rows[i][valueCol] {
+				if size < valueCol || value != rows[i][valueCol] {
 					if cellName, err := excelize.CoordinatesToCellName(valueCol+1, i+1); err == nil {
 						if formattedValue {
 							if _, err := strconv.ParseFloat(value, 64); err == nil {

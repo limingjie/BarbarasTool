@@ -6,6 +6,16 @@ This is just a naive implementation base on requirements. No magic here!
 
 I wish you happy every day, Barbara!
 
+## Directories
+
+```text
+/
+├──cmd                // Main application
+│  └──gui             // GUI
+└──pkg                // Libraries
+   └──excel           // Excel Utilities
+```
+
 ## Build
 
 ### Mac

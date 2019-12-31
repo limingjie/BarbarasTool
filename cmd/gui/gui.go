@@ -63,13 +63,22 @@ func NewGUI() {
 	})
 
 	// Main layout
+	// | ---------------------------------------------------------------|
+	// | Vendor file - Search Price (H) & Lead time (L) base on P/N (C) |
+	// |                    <- Vendor File 0 ->                   | [-] |
+	// |                    <- Vendor File 1 ->                   | [-] |
+	// |                                            | [Add Vendor File] |
+	// | ---------------------------------------------------------------|
+	// | Bid file - Fill in Price (K) & Lead time (P) base on P/N (F)   |
+	// |                    <-   Bid File    ->                   | [R] |
+	// | ---------------------------------------------------------------|
+	// | Cheers Barbara! |                                  | [Process] |
+	// | ---------------------------------------------------------------|
 	box := ui.NewVerticalBox()
 	box.SetPadded(true)
 	box.Append(ui.NewLabel("Vendor file - Search Price (H) & Lead time (L) base on P/N (C)"), false)
 	box.Append(gui.vendorFileEntriesBox, false)
-	// Vertical stretch
 	box.Append(ui.NewVerticalBox(), true)
-	// | <- Stretch -> | addButton |
 	box.Append(func() ui.Control {
 		hBox := ui.NewHorizontalBox()
 		hBox.SetPadded(true)
@@ -79,7 +88,6 @@ func NewGUI() {
 	}(), false)
 	box.Append(ui.NewHorizontalSeparator(), false)
 	box.Append(ui.NewLabel("Bid file - Fill in Price (K) & Lead time (P) base on P/N (F)"), false)
-	// | <- bidFileEntry -> | resetButton |
 	box.Append(func() ui.Control {
 		hBox := ui.NewHorizontalBox()
 		hBox.SetPadded(true)
@@ -88,7 +96,6 @@ func NewGUI() {
 		return hBox
 	}(), false)
 	box.Append(ui.NewHorizontalSeparator(), false)
-	// | Cheers Barbara! | <- Stretch -> | processButton |
 	box.Append(func() ui.Control {
 		hBox := ui.NewHorizontalBox()
 		hBox.SetPadded(true)
@@ -224,30 +231,29 @@ func (gui *GUI) onProcessButtonClick() {
 	}
 
 	// Backup bid file
-	excel.Backup(gui.bidFileEntry.Text())
+	bidFilename := gui.bidFileEntry.Text()
+	excel.Backup(bidFilename)
 
 	// Update bid file using maps
 	// - PN        - Col F - International Part No.
 	// - Price     - Col K - Unit Price CNY
 	// - Lead time - Col P - leadtime
-	var found, updated int
-	found, updated, err := excel.UpdateColumnByIndex(
-		&priceMap, gui.bidFileEntry.Text(), 'F'-'A', 'K'-'A', true)
-	if err != nil {
-		ui.MsgBoxError(gui.window, "Error", err.Error())
-		return
-	}
-	summary := fmt.Sprintf("\n- %d matching PN(s) found for price, %d cells updated.", found, updated)
+	summary := fmt.Sprintf("In %d vendor file(s).", len(gui.vendorFileEntries))
 
-	found, updated, err = excel.UpdateColumnByIndex(
-		&leadTimeMap, gui.bidFileEntry.Text(), 'F'-'A', 'P'-'A', false)
+	found, updated, err := excel.UpdateColumnByIndex(&priceMap, bidFilename, 'F'-'A', 'K'-'A', true)
 	if err != nil {
 		ui.MsgBoxError(gui.window, "Error", err.Error())
 		return
 	}
-	summary += fmt.Sprintf("\n- %d matching PN(s) found for lead time, %d cells updated.", found, updated)
+	summary += fmt.Sprintf("\n- %d matching PN(s) found, %d price(s) updated.", found, updated)
+
+	found, updated, err = excel.UpdateColumnByIndex(&leadTimeMap, bidFilename, 'F'-'A', 'P'-'A', false)
+	if err != nil {
+		ui.MsgBoxError(gui.window, "Error", err.Error())
+		return
+	}
+	summary += fmt.Sprintf("\n- %d matching PN(s) found, %d lead time updated.", found, updated)
 
 	// Done
-	ui.MsgBox(gui.window, "Done!",
-		fmt.Sprintf("In %d vendor file(s).%s", len(gui.vendorFileEntries), summary))
+	ui.MsgBox(gui.window, "Done!", summary)
 }
