@@ -18,7 +18,7 @@ type GUI struct {
 
 // NewGUI - Create GUI
 func NewGUI() {
-	gui := &GUI{
+	gui := GUI{
 		window:               ui.NewWindow("Barbara's Tool", 700, 100, false),
 		vendorFileEntriesBox: ui.NewVerticalBox(),
 		vendorFileEntries:    make([]*ui.Entry, 0),

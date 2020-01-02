@@ -73,7 +73,7 @@ func UpdateColumnByIndex(data *map[string]string,
 			// Update value
 			if value, ok := (*data)[key]; ok {
 				foundMap[key] = true
-				if size < valueCol || value != rows[i][valueCol] {
+				if size < valueCol+1 || value != rows[i][valueCol] {
 					if cellName, err := excelize.CoordinatesToCellName(valueCol+1, i+1); err == nil {
 						if formattedValue {
 							if _, err := strconv.ParseFloat(value, 64); err == nil {
