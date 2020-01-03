@@ -113,7 +113,7 @@ func NewGUI() {
 	// Open vendor files
 	ui.MsgBox(gui.window, "Message", "Open the vendor files.")
 	for gui.addVendorFile() {
-		// Until cancelled
+		// Until canceled
 	}
 
 	// Open bid files
@@ -127,7 +127,7 @@ func (gui *GUI) openExcelFile(required bool) (filename string) {
 	for true {
 		filename = ui.OpenFile(gui.window)
 
-		// The open file dialog is cancelled
+		// The open file dialog is canceled
 		if len(filename) == 0 {
 			if required {
 				ui.MsgBoxError(gui.window, "Error", "A file is required. Please try again.")
